@@ -1,0 +1,12 @@
+import sys
+from ot_queries import *
+
+
+f CreateTicket(title,description,username):
+    ticketId = addincident_query(title, description, username)
+    print ticketid
+
+
+
+CreateTicket(sys.argv[1], sys.argv[2], sys.argv[3])
+

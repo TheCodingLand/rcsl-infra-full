@@ -1,0 +1,187 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:1.5
+    command: --web --web.metrics.prometheus --web.metrics.prometheus.buckets="0.1,0.3,1.2,5.0" --docker
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 10002:8080
+      - 10001:8082
+      - 10000:8081
+    labels:
+      - "traefik.frontend.rule=Host:docker.lbr.lu"
+      - "traefik.frontend.entryPoints=http-admin"
+    networks:
+      - core-infra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - /opt/traefik/acme.json:/etc/traefik/acme.json
+
+  portainer:
+    image: portainer/portainer
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainerdata:/data"
+    networks:
+      - core-infra
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=9000"
+      - "traefik.docker.network=core-infra"
+      - "traefik.frontend.rule=Host:portainer.lbr.lu"
+
+  redis:
+
+    restart: always
+    image: redis:latest
+    expose:
+      - "6379"
+    environment:
+      - PHPREDMIN_DATABASE_REDIS_0_HOST=${PHPREDMIN_DATABASE_REDIS_0_HOST}
+    networks:
+      - core-infra
+  
+    volumes:
+    - ./redis:/data
+
+  php-redis-admin:
+
+    image: faktiva/php-redis-admin
+
+    expose:
+     - "80"
+   
+    labels:
+      - "traefik.docker.network=core-infra"
+      - "traefik.enable=true"
+      - "traefik.port=80"
+      - "traefik.frontend.rule=Host:pra.lbr.lu"
+      - "traefik.frontend.entryPoints=http"
+    networks:
+      - core-infra
+    depends_on:
+    - redis
+  
+  
+  rocketchat:
+   
+
+    image: rocketchat/rocket.chat
+
+    labels:
+      - "traefik.docker.network=core-infra"
+      - "traefik.enable=true"
+      - "traefik.port=3000"
+      - "traefik.frontend.rule=Host:chat.lbr.lu"
+      - "traefik.frontend.entryPoints=http"
+    environment:
+      - MAIL_URL=${MAIL_URL}
+      - MONGO_URL=${MONGO_URL}
+      - ROOT_URL=${ROOT_URL}
+      - Accounts_UseDNSDomainCheck=${Accounts_UseDNSDomainCheck}
+    depends_on:
+      - mongodb
+    ports:
+      - 3100:3100
+  
+    networks:
+      - core-infra
+
+  mongodb:
+    image: mongo
+    hostname: 'mongodb'
+    volumes:
+     - ./db/data:/data/db
+     - ./db/dump:/dump
+    command: mongod --smallfiles
+    networks:
+      - core-infra
+
+  hubot:
+    
+    image: "rcsl-hubot" 
+    hostname: "hubot"
+    environment:
+      - ROCKETCHAT_URL=${ROCKETCHAT_URL}
+      - ROCKETCHAT_ROOM=${ROCKETCHAT_ROOM}
+      - ROCKETCHAT_USER=${ROCKETCHAT_USER}
+      - ROCKETCHAT_PASSWORD=${ROCKETCHAT_PASSWORD}
+      - ROCKETCHAT_AUTH=${ROCKETCHAT_AUTH}
+      - BOT_NAME=${BOT_NAME}
+      - LISTEN_ON_ALL_PUBLIC=${LISTEN_ON_ALL_PUBLIC}
+      - EXTERNAL_SCRIPTS=${EXTERNAL_SCRIPTS}
+
+    volumes:
+      - ./hubot/scripts:/home/hubot/scripts
+      - ./hubot/pythonscripts:/myhubot/pythonscripts
+    depends_on:
+      - rocketchat
+    networks:
+      - core-infra
+
+
+  wiki:
+    # Use an already built XWiki image from DockerHub.
+    image: "xwiki:9.11.3-postgres-tomcat"
+  
+    depends_on:
+      - xwiki-postgres-db
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_HOST=${DB_HOST}
+
+    # The DB_USER/DB_PASSWORD/DB_HOST variables are used in the hibernate.cfg.xml file.
+
+    # Provide a name instead of an auto-generated id for the xwiki permanent directory configured in the Dockerfile,
+    # to make it simpler to identify in 'docker volume ls'.
+    labels:
+      - "traefik.docker.network=core-infra"
+      - "traefik.enable=true"
+      - "traefik.port=8080"
+      - "traefik.frontend.rule=Host:wiki.lbr.lu"
+      - "traefik.frontend.entryPoints=http"
+    ports:
+      - 8080:8080
+    volumes:
+      - xwiki-data:/usr/local/xwiki
+    networks:
+      - core-infra
+
+  # The container that runs PostgreSQL
+  xwiki-postgres-db:
+    image: "postgres:9.5"
+    environment:
+      - POSTGRES_ROOT_PASSWORD=${POSTGRES_ROOT_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_INITDB_ARGS=${POSTGRES_INITDB_ARGS}
+
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    networks:
+      - core-infra
+
+
+
+
+networks:
+  core-infra:
+    external: true
+
+volumes:
+  aidata: {}
+  portainerdata: {}
+  mongodb: {}
+  postgres-data: {}
+  xwiki-data: {}
+  

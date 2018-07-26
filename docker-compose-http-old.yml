@@ -1,0 +1,182 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:1.5
+    command: --web --web.metrics.prometheus --web.metrics.prometheus.buckets="0.1,0.3,1.2,5.0" --docker
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 10002:8080
+      - 10001:8082
+      - 10000:8081
+    labels:
+      - "traefik.frontend.rule=Host:docker.lbr.lu"
+      - "traefik.frontend.entryPoints=http-admin"
+    networks:
+      - web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - /opt/traefik/acme.json:/etc/traefik/acme.json
+
+  portainer:
+    image: portainer/portainer
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainerdata:/data"
+    networks:
+      - web
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=9000"
+      - "traefik.docker.network=web"
+      - "traefik.frontend.rule=Host:portainer.lbr.lu"
+
+  redis:
+    env_file:
+      - prod_env
+    restart: always
+    image: redis:latest
+    expose:
+      - "6379"
+    networks:
+      - web
+  
+    volumes:
+    - ./redis:/data
+
+  php-redis-admin:
+    env_file:
+     - prod_env
+    image: faktiva/php-redis-admin
+
+    environment:
+     - PHPREDMIN_DATABASE_REDIS_0_HOST=redis
+    expose:
+     - "80"
+   
+    labels:
+      - "traefik.docker.network=web"
+      - "traefik.enable=true"
+      - "traefik.port=80"
+      - "traefik.frontend.rule=Host:pra.lbr.lu"
+      - "traefik.frontend.entryPoints=http"
+    networks:
+      - web
+    depends_on:
+    - redis
+  
+  
+  rocketchat:
+   
+
+    image: rocketchat/rocket.chat
+    environment:
+      - MAIL_URL=smtp://mail.lbr.lu
+      - MONGO_URL=mongodb://mongodb:27017/parties
+      - ROOT_URL=http://chat.lbr.lu
+      - Accounts_UseDNSDomainCheck=True
+    labels:
+      - "traefik.docker.network=web"
+      - "traefik.enable=true"
+      - "traefik.port=3000"
+      - "traefik.frontend.rule=Host:chat.lbr.lu"
+      - "traefik.frontend.entryPoints=http"
+    depends_on:
+      - mongodb
+    ports:
+      - 3100:3100
+  
+    networks:
+      - web
+
+  mongodb:
+    image: mongo
+    hostname: 'mongodb'
+    volumes:
+     - ./db/data:/data/db
+     - ./db/dump:/dump
+    command: mongod --smallfiles
+    networks:
+      - web
+
+  hubot:
+    build: ./hubot 
+    hostname: "hubot"
+    environment:
+      - ROCKETCHAT_URL=rocketchat:3000
+      - ROCKETCHAT_ROOM=general
+      - ROCKETCHAT_USER=Alfred
+      - ROCKETCHAT_PASSWORD=Ctgsup*0322
+      - ROCKETCHAT_AUTH=password
+      - BOT_NAME=Alfred
+      - LISTEN_ON_ALL_PUBLIC=true
+      - EXTERNAL_SCRIPTS=hubot-help,hubot-seen,hubot-links,hubot-diagnostics,hubot-traffic,hubot-remind-advanced,hubot-rules,hubot-maps,hubot-redis-brain
+    
+    volumes:
+      - ./hubot/scripts:/home/hubot/scripts
+      - ./hubot/pythonscripts:/myhubot/pythonscripts
+    depends_on:
+      - rocketchat
+    networks:
+      - web
+
+
+  wiki:
+    # Use an already built XWiki image from DockerHub.
+    image: "xwiki:9.11.3-postgres-tomcat"
+  
+    depends_on:
+      - xwiki-postgres-db
+    
+    # The DB_USER/DB_PASSWORD/DB_HOST variables are used in the hibernate.cfg.xml file.
+    environment:
+      - DB_USER=xwiki
+      - DB_PASSWORD=xwiki
+      - DB_DATABASE=xwiki
+      - DB_HOST=xwiki-postgres-db
+    # Provide a name instead of an auto-generated id for the xwiki permanent directory configured in the Dockerfile,
+    # to make it simpler to identify in 'docker volume ls'.
+    labels:
+      - "traefik.docker.network=web"
+      - "traefik.enable=true"
+      - "traefik.port=8080"
+      - "traefik.frontend.rule=Host:wiki.lbr.lu"
+      - "traefik.frontend.entryPoints=http"
+    volumes:
+      - xwiki-data:/usr/local/xwiki
+    networks:
+      - web
+
+  # The container that runs PostgreSQL
+  xwiki-postgres-db:
+    image: "postgres:9.5"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_ROOT_PASSWORD=xwiki
+      - POSTGRES_PASSWORD=xwiki
+      - POSTGRES_USER=xwiki
+      - POSTGRES_DB=xwiki
+      - POSTGRES_INITDB_ARGS="--encoding=UTF8"
+    networks:
+      - web
+
+
+
+
+networks:
+  web:
+    external: true
+
+volumes:
+  aidata: {}
+  portainerdata: {}
+  mongodb: {}
+  postgres-data: {}
+  xwiki-data: {}
+  

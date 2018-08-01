@@ -5,7 +5,6 @@ import Upload from './components/Upload'
 import Step from './components/Step'
 
 
-
 class App extends Component {
   render() {
     return (

@@ -33,13 +33,13 @@ export default class Upload extends Component {
         this.callback = () => console.log('Hello!');
 
         this.success = file => { console.log('uploaded', file); 
-        this.props.ws.emit("fileuploaded", file.name )    
+        this.props.socket.emit("message", file.name )    
     }
 
         this.removedfile = file => { console.log('removing...', file);
         this.selectPagesEnable()}
 
-        this.selectPagesEnable = () => this.setState({selectpages=true})
+        this.selectPagesEnable = () => this.setState({selectpages:true})
 
 
         this.dropzone = null;

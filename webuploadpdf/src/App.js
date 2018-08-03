@@ -12,7 +12,7 @@ class App extends Component {
      
       
           <Step step={1}/>
-          <Upload />
+          <Upload socket = {this.props.socket}/>
           
       </div>
     );

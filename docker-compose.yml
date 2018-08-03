@@ -234,6 +234,21 @@ services:
     networks:
       - web
 
+  websocket-redisbridge:
+    build: ./websocket-redisbridge/
+    labels:
+        - "traefik.backend=uploadws"
+        - "traefik.docker.network=web"
+        - "traefik.enable=true"
+        - "traefik.port=3001"
+        - "traefik.frontend.rule=Host:uploadws.lbr.lu"
+        - "traefik.frontend.entryPoints=http"
+    expose:
+      - "3001"
+    links:
+      - redis
+    networks:
+      - web
 
   fileuploadservice:
     environment:

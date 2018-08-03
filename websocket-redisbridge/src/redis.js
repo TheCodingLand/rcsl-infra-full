@@ -9,8 +9,8 @@ var redis_sub = redis.createClient(host)
 
 
 
-
-
+let previousConversions = redisclient.get('conversion.*')
+console.log(previousConversions)
 //SOCKETIO
 
 var io = require('socket.io')(3001);

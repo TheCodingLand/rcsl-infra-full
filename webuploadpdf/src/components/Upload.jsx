@@ -72,7 +72,7 @@ export default class Upload extends Component {
 getOutputFile(){
     let patharray = this.state.filestate.output.split('/')
     let filename=patharray[patharray.length-1]
-    return 'file://bkprcsl01/secondary-backups/docs/converted/'+filename
+    return '\\\\bkprcsl01\\secondary-backups\\docs\\converted\\' + filename
  
 
 }
@@ -104,7 +104,7 @@ getOutputFile(){
                 <aside>
                 
                   <ul>
-                        <p> {this.state.outputfile ? <a href={this.state.outputfile}>Download</a> : ""}                   
+                        <p> {this.state.outputfile ? <a href={this.state.outputfile}>{this.state.outputfile}</a> : ""}                   
                       </p>
                       <p> {this.state.filestate.progress ? this.state.filestate.progress : ""}                   
                       </p>

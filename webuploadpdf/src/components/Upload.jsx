@@ -2,13 +2,16 @@ import React, { Component } from 'react'
 import DropzoneComponent from 'react-dropzone-component';
 import axios from 'axios'
 import 'react-dropzone-component/styles/filepicker.css'
-
+import TextField from '@material-ui/core/TextField'
 
 export default class Upload extends Component {
    
     constructor(props) {
         super(props);
-
+        this.state = {
+            selectpages : false,
+            selectedpages : []
+        }
         // For a full list of possible configurations,
         // please consult http://www.dropzonejs.com/#configuration
         this.djsConfig = {
@@ -33,7 +36,11 @@ export default class Upload extends Component {
         this.props.ws.emit("fileuploaded", file.name )    
     }
 
-        this.removedfile = file => console.log('removing...', file);
+        this.removedfile = file => { console.log('removing...', file);
+        this.selectPagesEnable()}
+
+        this.selectPagesEnable = () => this.setState({selectpages=true})
+
 
         this.dropzone = null;
     }
@@ -61,8 +68,10 @@ export default class Upload extends Component {
          
                 </div>
                 <aside>
-                  <h2><a href="http://portainer.lbr.lu/#/containers/925698c183adbab9533ee57fcd8f08c17e3e82d5999422aa198612ed4aa5501c/logs">Monitoring</a></h2>
+                
                   <ul>
+                      <TextField > </TextField>
+
                   
                   </ul>
                 </aside>

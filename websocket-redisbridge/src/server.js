@@ -6,41 +6,48 @@ var host = "redis://" + redis_host + ":6379";
 var redisclient = redis.createClient(host);
 redisclient.select(5);
 var redis_sub = redis.createClient(host)
+console.log("v0.03")
 
-
+redis_sub.psubscribe('conversion.*')
 
 
 let previousConversions = redisclient.get('conversion.*')
 console.log(previousConversions)
-//SOCKETIO
 
+
+//SOCKETIO
+redis_sub.on("pmessage", function (channel, message) {
+  console.log("pdf :" + channel)
+  console.log(message)
+  let err =""
+  let keyvalue = ""
+  
+  redisclient.hgetall(message, function(err,result) {
+    console.log(result)
+    io.emit( 'message' , JSON.stringify(result) )
+  }) //stored key is the same name as the channel
+  
+  
+})
 
 
 io.on('connection', function (socket) {
-  io.emit('this', { will: 'be received by everyone' });
-
-  redis_sub.on("message", function (channel, message) {
-    console.log("pdf update recieved" + channel + ": " + message);
-    redisclient.hmget(channel) //stored key is the same name as the channel
-    io.emit('message', { message })
+    console.log('connexion started')
     
-  
-  })
-  socket.on('message', function (from, msg) {
-    //console.log('I received a private message by ', from);
-    var tbl = from.split(":")
-    redis_sub.subscribe(`conversion.${msg}`)
+    //socket.send('message', { test: 'be received by client' });
 
-    
+    socket.on('message', function (from, msg) {
+      console.log('I received a private message by ', from);
+      })
+      
+    socket.on('disconnect', function () {
+      //io.emit('user disconnected');
+     
+    });  
   });
 
 
   
-  socket.on('disconnect', function () {
-    io.emit('user disconnected');
-  });
-
   
 
-});
-
+  

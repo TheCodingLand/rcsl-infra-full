@@ -245,10 +245,11 @@ services:
         - "traefik.frontend.entryPoints=http"
     expose:
       - "3001"
-    links:
-      - redis
+    
     networks:
       - web
+    working_dir : /usr/src/app
+    command: sh -c 'node ./src/server.js'
 
   fileuploadservice:
     environment:

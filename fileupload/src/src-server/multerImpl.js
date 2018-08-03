@@ -14,11 +14,11 @@ module.exports = (app) => {
             break;          
         }
   
-        cb(null, file.originalname.slice(0, 4) + Date.now() + ext);
+        cb(null, file.originalname.slice(0, -4) + ext);
       }
     });
     const upload = multer({storage: storage});
-  
+    
     app.post('/uploadHandler', upload.single('file'), function (req, res, next) {
       if (req.file && req.file.originalname) {
         console.log(`Received file ${req.file.originalname}`);

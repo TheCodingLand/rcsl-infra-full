@@ -1,5 +1,6 @@
-//redis sub channels :
+
 var redis = require('redis');
+var io = require('socket.io')(3001);
 const redis_host = "redis"
 var host = "redis://" + redis_host + ":6379";
 var redisclient = redis.createClient(host);
@@ -13,7 +14,7 @@ let previousConversions = redisclient.get('conversion.*')
 console.log(previousConversions)
 //SOCKETIO
 
-var io = require('socket.io')(3001);
+
 
 io.on('connection', function (socket) {
   io.emit('this', { will: 'be received by everyone' });
@@ -28,7 +29,7 @@ io.on('connection', function (socket) {
   socket.on('message', function (from, msg) {
     //console.log('I received a private message by ', from);
     var tbl = from.split(":")
-    redis_sub.subscribe(`conversion.${pdfname}`)
+    redis_sub.subscribe(`conversion.${msg}`)
 
     
   });

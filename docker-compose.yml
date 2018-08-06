@@ -228,7 +228,7 @@ services:
     build: ./pdfconvert
     volumes:
      - './pdfconvert:/usr/src/app'
-     - pdf-data:/media/docs/
+     - /media/docs:/media/docs/
     environment:
      - PDFPATHORIGIN=${PDFPATHORIGIN}
     networks:
@@ -265,7 +265,7 @@ services:
     expose:
       - "8000"
     volumes:
-      - pdf-data:/data
+      - /media/docs:/data
     networks:
       - web
     working_dir : /data/converted
@@ -285,7 +285,7 @@ services:
     expose:
       - "8080"
     volumes:
-      - pdf-data:/data
+      - /media/docs:/data
     networks:
       - web
     working_dir : /usr/src/app
@@ -320,5 +320,5 @@ volumes:
   mongodb: {}
   postgres-data: {}
   xwiki-data: {}
-  pdf-data : {}
+ 
   

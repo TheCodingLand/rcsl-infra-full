@@ -3,15 +3,31 @@ import DropzoneComponent from 'react-dropzone-component';
 import axios from 'axios'
 import 'react-dropzone-component/styles/filepicker.css'
 import TextField from '@material-ui/core/TextField'
+import { linkSync } from 'fs';
+import { withStyles } from '@material-ui/core/styles';
+import FolderList from './folderList';
+//import Typography from '@material-ui/core/Typography'
+import CircularProgress from '@material-ui/core/CircularProgress';
+import purple from '@material-ui/core/colors/purple';
+import Grid from '@material-ui/core/Grid'
+import { LinearProgress, Typography } from '@material-ui/core';
 
-export default class Upload extends Component {
+const styles = theme => ({
+    root: {
+      flexGrow: 1,
+    },})
+
+class Upload extends Component {
    
     constructor(props) {
         super(props);
         this.state = {
             selectpages : false,
             selectedpages : [],
-            filestate : {}
+            filestate : {},
+            links:[],
+            filename : "",
+            conversion : "idle"
         }
         // For a full list of possible configurations,
         // please consult http://www.dropzonejs.com/#configuration
@@ -31,12 +47,14 @@ export default class Upload extends Component {
         this.callbackArray = [() => console.log('Hi!'), () => console.log('Ho!')];
         
         // Simple callbacks work too, of course
-        this.callback = () => console.log('Hello!');
+        this.added = () => {};
 
         this.success = file => { console.log('uploaded', file); 
-        
+        this.setState({conversion:"started"})
+        this.setState({filename:file.name})
+
         //this.props.socket.send("message", file.name ) 
-        
+
         this.removedfile(file)   
     }
 
@@ -45,74 +63,88 @@ export default class Upload extends Component {
         }
 
         this.selectPagesEnable = () => this.setState({selectpages:true})
-
-
         this.dropzone = null;
-  
-
-        
         this.props.socket.on('event', this.gotMessage)
-
         this.props.socket.on('message', this.gotMessage)
            
-        
       
     }
 
     gotMessage = (message) => { 
         console.log(message)
         console.log(JSON.parse(message))
-
-        this.setState( { filestate: JSON.parse(message) } )
+        let o = JSON.parse(message)
+        if (o.name === this.state.filename){
+        this.setState( { filestate: o } )
         if (this.state.filestate.status === "finished") {
-            this.state.outputfile = this.getOutputFile()
-        }
+            this.getOutputFile()
+        
+    }}
     }
    
 getOutputFile(){
-    let patharray = this.state.filestate.output.split('/')
+    let links = []
+    if  (this.state.filestate.link1){
+    let patharray = this.state.filestate.link1.split('/')
     let filename=patharray[patharray.length-1]
-    return '\\\\bkprcsl01\\secondary-backups\\docs\\converted\\' + filename
- 
+    let link = {url:'http://converted.lbr.lu/' + filename, name: filename}
+    console.log(link)
+    links.push(link)
+    }
 
+    if  (this.state.filestate.link2){
+    let patharray = this.state.filestate.link2.split('/')
+    let filename=patharray[patharray.length-1]
+    let link = {url:'http://converted.lbr.lu/' + filename, name:filename}
+    links.push(link)
+}
+    if  (this.state.filestate.link3){
+    let patharray = this.state.filestate.link3.split('/')
+    let filename=patharray[patharray.length-1]
+    let link = {url:'http://converted.lbr.lu/' + filename, name:filename}
+    links.push(link)
+    this.setState({conversion:'idle'})
+    }
+    this.setState({links:links})
+    console.log(this.state.links)
+    
 }
     
 
-
     render() {
+        const { classes } = this.props;
         const config = this.componentConfig;
         const djsConfig = this.djsConfig;
 
-        // For a list of all possible events (there are many), see README.md!
+        
         const eventHandlers = {
             init: dz => this.dropzone = dz,
             drop: this.callbackArray,
-            addedfile: this.callback,
+            addedfile: this.added,
             success: this.success,
             removedfile: this.removedfile
         }
 
-
-
-
             return (
               <section>
-                <div className="dropzone" >
-                  <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}></DropzoneComponent>
-         
-                </div>
+                {this.state.conversion ==='idle' ?
+                <div className="dropzone" > 
+                  <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}></DropzoneComponent>    
+                </div>:<CircularProgress />}
                 <aside>
+                    
                 
-                  <ul>
-                        <p> {this.state.outputfile ? <a href={this.state.outputfile}>{this.state.outputfile}</a> : ""}                   
-                      </p>
-                      <p> {this.state.filestate.progress ? this.state.filestate.progress : ""}                   
-                      </p>
-                      <p> {this.state.filestate.status ? this.state.filestate.status : ""}                   
-                      </p>
-
-                  
-                  </ul>
+                      <Typography>       
+                      {this.state.filestate.progress ? this.state.filestate.progress : ""}                   
+                     </Typography>
+                      <Typography> 
+                      {this.state.filestate.status ? this.state.filestate.status : ""}                   
+                      </Typography>
+                    <Grid className={classes.root} container alignItems="center" justify="center">
+                    <Grid item >
+                      <FolderList links={this.state.links} />
+                      </Grid>
+                  </Grid>
                 </aside>
               </section>
             );
@@ -120,5 +152,5 @@ getOutputFile(){
         }
         
     
-
+        export default withStyles(styles)(Upload)
 

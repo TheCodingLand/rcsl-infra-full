@@ -78,8 +78,14 @@ class Upload extends Component {
         this.setState( { filestate: o } )
         if (this.state.filestate.status === "finished") {
             this.getOutputFile()
+            
         
-    }}
+        }
+        if (this.state.filestate.status ==="completed") {
+            this.setState({conversion:'idle'})
+        }
+
+}
     }
    
 getOutputFile(){

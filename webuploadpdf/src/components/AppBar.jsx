@@ -27,7 +27,7 @@ function DenseAppBar(props) {
             <MenuIcon />
           </IconButton>
           <Typography variant="title" color="inherit">
-            Julien's PDF Converter
+            LBR PDF Converter
           </Typography>
         </Toolbar>
       </AppBar>

@@ -10,8 +10,8 @@ import FolderList from './folderList';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import purple from '@material-ui/core/colors/purple';
 import Grid from '@material-ui/core/Grid'
-import { LinearProgress, Typography } from '@material-ui/core';
-
+import Typography from '@material-ui/core/Typography';
+import LinearProgress from './LinearProgress'
 const styles = theme => ({
     root: {
       flexGrow: 1,
@@ -34,13 +34,13 @@ class Upload extends Component {
         this.djsConfig = {
             addRemoveLinks: true,
             acceptedFiles: "image/jpeg,.pdf"
-        };
+        }
 
         this.componentConfig = {
             iconFiletypes: ['.jpg', '.pdf'],
             showFiletypeIcon: true,
             postUrl: 'http://uploadpdf.lbr.lu/uploadHandler'
-        };
+        }
 
         // If you want to attach multiple callbacks, simply
         // create an array filled with all your callbacks.
@@ -48,7 +48,6 @@ class Upload extends Component {
         
         // Simple callbacks work too, of course
         this.added = () => {};
-
         this.success = file => { console.log('uploaded', file); 
         this.setState({conversion:"started"})
         this.setState({filename:file.name})
@@ -75,13 +74,20 @@ class Upload extends Component {
         console.log(JSON.parse(message))
         let o = JSON.parse(message)
         if (o.name === this.state.filename){
-        this.setState( { filestate: o } )
-        if (this.state.filestate.status === "finished") {
-            this.getOutputFile()
-            
+            if (o.links) {
+                
+                //var newString = mystring.replace(/i/g, "a");
+                let links = o.links.replace(/'/g, "\"")
+                console.log('links :',links)
+                o.links = JSON.parse(links)
+
+            }
         
-        }
+        this.setState( { filestate: o } )
+       
+       
         if (this.state.filestate.status ==="completed") {
+            //this.getOutputFile()
             this.setState({conversion:'idle'})
         }
 
@@ -138,18 +144,24 @@ getOutputFile(){
                   <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}></DropzoneComponent>    
                 </div>:<CircularProgress />}
                 <aside>
-                    
+                <Typography> 
+                       {this.state.filestate.name ? "Converting :"+this.state.filestate.name : ""}                   
+                      </Typography>
                 
                       <Typography>       
-                      {this.state.filestate.progress ? this.state.filestate.progress : ""}                   
+                      {this.state.filestate.progress ? this.state.filestate.progress+'/'+this.state.filestate.pages : ""}                   
+                      <LinearProgress value={parseInt(this.state.filestate.progress, 10)} max={parseInt(this.state.filestate.pages,10)} />
                      </Typography>
+                     
                       <Typography> 
                       {this.state.filestate.status ? this.state.filestate.status : ""}                   
                       </Typography>
                     <Grid className={classes.root} container alignItems="center" justify="center">
+                    {this.state.filestate.links ? 
                     <Grid item >
-                      <FolderList links={this.state.links} />
-                      </Grid>
+                      <FolderList name={this.state.filestate.name} links={this.state.filestate.links} />
+                      </Grid> :<div> </div>
+                    }
                   </Grid>
                 </aside>
               </section>

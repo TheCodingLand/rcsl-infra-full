@@ -24,11 +24,11 @@ function FolderList(props) {
     <div className={classes.root}>
       <List>
       {props.links.map(link => {
-        return <ListItem>
-          <Avatar>
-            <AttachmentIcon />
+        return <ListItem key={link}>
+          <Avatar onClick={()=> window.open('http://converted.lbr.lu/'+link, "_blank")} >
+            <AttachmentIcon  onClick={()=> window.open('http://converted.lbr.lu/'+link, "_blank")}  />
           </Avatar>
-          <ListItemText onClick={()=> window.open(link.url, "_blank")} button primary={link.name} secondary={link.url} />
+          <ListItemText onClick={()=> window.open('http://converted.lbr.lu/'+link, "_blank")} button primary={props.name} secondary={link} />
       </ListItem> 
       })}
 

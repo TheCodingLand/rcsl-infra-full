@@ -228,7 +228,7 @@ services:
     build: ./pdfconvert
     volumes:
      - './pdfconvert:/usr/src/app'
-     - '/media/docs:/media/docs/'
+     - /media/docs:/media/docs/
     environment:
      - PDFPATHORIGIN=${PDFPATHORIGIN}
     networks:
@@ -251,6 +251,26 @@ services:
     working_dir : /usr/src/app
     command: sh -c 'node ./src/server.js'
 
+  converted:
+    environment:
+      - DESTINATION=/data
+    image: python:latest
+    labels:
+        - "traefik.backend=converted"
+        - "traefik.docker.network=web"
+        - "traefik.enable=true"
+        - "traefik.port=8000"
+        - "traefik.frontend.rule=Host:converted.lbr.lu"
+        - "traefik.frontend.entryPoints=http"
+    expose:
+      - "8000"
+    volumes:
+      - /media/docs:/data
+    networks:
+      - web
+    working_dir : /data/converted
+    command: sh -c 'python -m http.server 8000'
+
   fileuploadservice:
     environment:
       - DESTINATION=/data
@@ -265,7 +285,7 @@ services:
     expose:
       - "8080"
     volumes:
-      - '/media/docs:/data'
+      - /media/docs:/data
     networks:
       - web
     working_dir : /usr/src/app
@@ -287,6 +307,20 @@ services:
       
     links:
       - fileuploadservice
+  
+  ms-sql:
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+    image: microsoft/mssql-server-linux:2017-latest
+    ports:
+      - "1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - web
+    
+
 
 
 networks:
@@ -300,4 +334,6 @@ volumes:
   mongodb: {}
   postgres-data: {}
   xwiki-data: {}
+  sql-data: {}
+ 
   

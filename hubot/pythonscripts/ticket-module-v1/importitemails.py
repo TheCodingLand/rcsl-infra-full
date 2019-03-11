@@ -9,11 +9,11 @@ import otXmlPost
 from xml.sax.saxutils import escape
 
 import xml.etree.ElementTree as ET
-host = 'mail.rcsl.lu'
-userid = 'it@rcsl.lu'
-passwd = 'Ctgsup*0322'
-EMAIL_ACCOUNT = "it@rcsl.lu"
-PASSWORD = "Ctgsup*0322"
+host = ''
+userid = ''
+passwd = ''
+EMAIL_ACCOUNT = ""
+PASSWORD = ""
 
 mail = imaplib.IMAP4_SSL(host)
 mail.login(EMAIL_ACCOUNT, PASSWORD)
